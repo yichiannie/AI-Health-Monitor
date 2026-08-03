@@ -2,7 +2,7 @@
 
 #include "common/HealthData.h"
 #include "sensor/Sensor.h"
-
+#include "display/Display.h"
 
 HealthData healthData;
 
@@ -14,16 +14,11 @@ void setup()
 
     initSensor();
 
+    initDisplay();
 
     updateSensor(healthData);
 
-
-    Serial.print("Heart Rate: ");
-    Serial.println(healthData.heartRate);
-
-
-    Serial.print("SpO2: ");
-    Serial.println(healthData.spo2);
+    updateDisplay(healthData);
 }
 
 
