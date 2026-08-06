@@ -1,0 +1,116 @@
+#include <Arduino.h>
+#include <Wire.h>
+
+#define I2C_SDA 26
+#define I2C_SCL 25
+#include <Arduino.h>
+
+#include "common/HealthData.h"
+#include "sensor/Sensor.h"
+#include "display/Display.h"
+
+HealthData healthData;
+
+
+void setup()
+{
+    Serial.begin(115200);
+
+
+    initSensor();
+
+    initDisplay();
+
+    updateDisplay(healthData);
+}
+
+
+void loop()
+{
+
+}
+void setup()
+{
+    Serial.begin(115200);
+
+    Wire.begin(I2C_SDA, I2C_SCL);
+
+    Serial.println("I2C Scanner Start");
+}
+
+
+void loop()
+{
+    byte error;
+    int deviceCount = 0;
+
+    Serial.println("Scanning...");
+
+    for(byte address = 1; address < 127; address++)
+    {
+        Wire.beginTransmission(address);
+
+        error = Wire.endTransmission();
+
+        if(error == 0)
+        {
+            Serial.print("Device found at 0x");
+            Serial.println(address, HEX);
+
+            deviceCount++;
+        }
+    }
+
+
+    if(deviceCount == 0)
+    {
+        Serial.println("No device found");
+    }
+
+    delay(3000);
+}
+
+
+
+
+#include <Arduino.h>
+
+#include "sensor/Sensor.h"
+
+void TaskSensor(void *pvParameters)
+{
+    initSensor();
+
+    while(true)
+    {
+        readSensor();
+
+        calculateHeartRate();
+        calculateSpO2();
+
+        xSemaphoneTake(dataMutex, portMAX_DELAY);
+
+        healthData.heartRate = heartRate;
+        healthData.spo2 = spo2;
+
+        xSemaphoneGive(dataMutex);
+
+        vTaskDelay(pdMS_TO_TICKS(20));
+    }
+}
+
+bool initSensor()
+{
+    return true;
+}
+
+
+void updateSensor(HealthData &data)
+{
+    data.heartRate = 75;
+    data.spo2 = 98;
+
+    data.state = READY;
+
+    data.timestamp = millis();
+}

@@ -3,11 +3,10 @@
 
 
 #include "common/HealthData.h"
-
+#include "common/RawSensorData.h"
 
 bool initSensor();
 
-void updateSensor(HealthData &data);
-
+RawSensorData readSensor();
 
 #endif

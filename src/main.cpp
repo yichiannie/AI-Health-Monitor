@@ -1,10 +1,7 @@
 #include <Arduino.h>
 
-#include "common/HealthData.h"
 #include "sensor/Sensor.h"
-#include "display/Display.h"
-
-HealthData healthData;
+#include "algorithm/Algorithm.h"
 
 
 void setup()
@@ -12,17 +9,32 @@ void setup()
     Serial.begin(115200);
 
 
-    initSensor();
-
-    initDisplay();
-
-    updateSensor(healthData);
-
-    updateDisplay(healthData);
+    if(initSensor())
+    {
+        Serial.println("Sensor OK");
+    }
 }
 
 
 void loop()
 {
+    RawSensorData raw = readSensor();
 
+
+    HealthData health = process(raw);
+
+
+    Serial.print("State: ");
+    Serial.println(health.state);
+
+
+    Serial.print("HR: ");
+    Serial.println(health.heartRate);
+
+
+    Serial.print("SpO2: ");
+    Serial.println(health.spo2);
+
+
+    delay(100);
 }

@@ -4,9 +4,11 @@
 
 enum SensorState
 {
-    WAITING_FOR_FINGER,
-    CALCULATING,
-    READY,
+    SENSOR_INIT,
+    NO_FINGER,
+    SIGNAL_WEAK,
+    MEASURING,
+    DATA_READY,
     SENSOR_ERROR
 };
 
