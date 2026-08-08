@@ -38,9 +38,5 @@ RawSensorData readSensor()
 
     data.red = particleSensor.getRed();
 
-
-    data.valid = (data.ir > 50000);
-
-
     return data;
 }

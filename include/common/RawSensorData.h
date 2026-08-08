@@ -8,8 +8,6 @@ struct RawSensorData
     uint32_t ir;
     uint32_t red;
 
-    bool valid;
-
     unsigned long timestamp;
 };
 

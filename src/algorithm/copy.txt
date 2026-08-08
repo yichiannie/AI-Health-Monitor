@@ -1,0 +1,88 @@
+#include "algorithm/Algorithm.h"
+#include <Arduino.h>
+
+static uint32_t previousIR = 0;
+static bool rising = false;
+static unsigned long lastBeatTime = 0;
+static float currentHeartRate = 0;
+static const uint32_t MIN_PEAK = 80000;
+static int risingCount = 0;
+
+static bool detectBeat(const RawSensorData &data)
+{
+    bool beatDetected = false;
+
+    if(data.ir > previousIR)
+    {
+        rising = true;
+        risingCount++;
+    }
+    else if(data.ir < previousIR)
+    {
+        if(rising)
+        {
+            unsigned long now = data.timestamp;
+
+            if(risingCount >=  5 && previousIR > MIN_PEAK && now - lastBeatTime > 300)
+            {
+                if(lastBeatTime != 0)
+                {
+                    unsigned long interval = now - lastBeatTime;
+                    currentHeartRate = 60000.0f / interval;
+
+                    Serial.print("Interval: ");
+                    Serial.println(interval);
+                }
+
+                beatDetected = true;
+                lastBeatTime = now;
+            }
+            rising = false;
+            risingCount = 0;
+        }
+    }
+    previousIR = data.ir;
+
+    return beatDetected;
+}
+
+HealthData process(RawSensorData data)
+{
+    bool fingerDetected;
+
+    HealthData result;
+
+    result.timestamp = millis();
+
+    fingerDetected = (data.ir >50000);
+
+    if(!fingerDetected)
+    {
+        result.state = NO_FINGER;
+
+        result.heartRate = 0;
+        result.spo2 = 0;
+    }
+    else
+    {
+        if(detectBeat(data))
+        {
+            Serial.print("Peak: ");
+            Serial.print(previousIR);
+
+            Serial.print("   BPM: ");
+            Serial.println(currentHeartRate);
+
+            result.heartRate = currentHeartRate;
+            result.state = DATA_READY;
+        }
+        else
+        {
+            result.heartRate = currentHeartRate;
+            result.state = MEASURING;
+        }
+
+    }
+    return result;
+}
+

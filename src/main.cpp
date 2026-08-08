@@ -20,21 +20,10 @@ void loop()
 {
     RawSensorData raw = readSensor();
 
-
     HealthData health = process(raw);
 
+    // 基础排查：如果串口依然没有任何输出，解开下面这行的注释，看看 sensor raw 是否在正常刷新
+    // Serial.print("IR: "); Serial.print(raw.ir); Serial.print(" State: "); Serial.println(health.state);
 
-    Serial.print("State: ");
-    Serial.println(health.state);
-
-
-    Serial.print("HR: ");
-    Serial.println(health.heartRate);
-
-
-    Serial.print("SpO2: ");
-    Serial.println(health.spo2);
-
-
-    delay(100);
+    delay(10);
 }
