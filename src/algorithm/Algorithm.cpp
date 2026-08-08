@@ -4,6 +4,10 @@
 
 #define FILTER_SIZE 10
 
+#define MOTION_THRESHOLD_PERCENT 5.0f
+
+#define MOTION_COUNT_THRESHOLD 2
+
 static uint32_t irBuffer[FILTER_SIZE];
 static int bufferIndex = 0;
 
@@ -14,6 +18,10 @@ static bool rising = false;
 static unsigned long lastBeatTime = 0;
 
 static float currentHeartRate = 0;
+
+static uint32_t previousIR = 0;
+
+static int motionCount = 0;
 
 
 #define BPM_BUFFER_SIZE 5
@@ -137,66 +145,132 @@ static bool detectBeat(uint32_t filteredIR, unsigned long timestamp)
 }
 
 
+static bool detectMotion(uint32_t ir)
+{
+    if(previousIR == 0)
+    {
+        previousIR = ir;
+        return false;
+    }
+
+    float changePercent =
+        abs((float)ir - (float)previousIR)
+        / (float)previousIR
+        * 100.0f;
+
+    previousIR = ir;
+
+    if(changePercent > MOTION_THRESHOLD_PERCENT)
+    {
+        motionCount++;
+    }
+    else
+    {
+        motionCount = 0;
+    }
+
+    if(motionCount >= MOTION_COUNT_THRESHOLD)
+    {
+        return true;
+    }
+
+    return false;
+}
 
 HealthData process(RawSensorData data)
 {
-
     HealthData result;
 
-    result.timestamp = millis();
-
-
+    result.timestamp = data.timestamp;
 
     bool fingerDetected = (data.ir > 10000);
 
+    // -------------------------
+    // 1. Signal Quality
+    // -------------------------
+
     if(!fingerDetected)
     {
-
-        result.state = NO_FINGER;
+        result.signalQuality = SIGNAL_NO_FINGER;
+        result.measureState = WAITING;
 
         result.heartRate = 0;
-
         result.spo2 = 0;
 
-
         return result;
-
     }
-
 
 
     uint32_t filteredIR = filterIR(data.ir);
 
+    bool moving = detectMotion(data.ir);
 
-    if(detectBeat(filteredIR,data.timestamp))
+
+    if(moving)
     {
+        result.signalQuality = SIGNAL_MOVING;
+        result.measureState = MEASURING;
 
+        result.heartRate = 0;
+        result.spo2 = 0;
+
+        Serial.println("Signal: MOVING");
+
+        return result;
+    }
+
+
+    // -------------------------
+    // 2. Signal is good
+    // -------------------------
+
+    result.signalQuality = SIGNAL_GOOD;
+
+
+    // -------------------------
+    // 3. Measurement State
+    // -------------------------
+
+    if(detectBeat(filteredIR, data.timestamp))
+    {
         Serial.print("Filtered IR:");
         Serial.print(filteredIR);
-
 
         Serial.print(" BPM:");
         Serial.println(currentHeartRate);
 
-
-        result.state = DATA_READY;
-
+        result.measureState = DATA_READY;
     }
-
     else
     {
-
-        result.state = MEASURING;
-
+        result.measureState = MEASURING;
     }
-
 
 
     result.heartRate = currentHeartRate;
-
     result.spo2 = 0;
 
+    Serial.print("Signal: ");
+
+    if(result.signalQuality == SIGNAL_NO_FINGER)
+        Serial.print("NO_FINGER");
+    else if(result.signalQuality == SIGNAL_MOVING)
+        Serial.print("MOVING");
+    else if(result.signalQuality == SIGNAL_GOOD)
+        Serial.print("GOOD");
+
+
+    Serial.print(" | Measure: ");
+
+    if(result.measureState == WAITING)
+        Serial.print("WAITING");
+    else if(result.measureState == MEASURING)
+        Serial.print("MEASURING");
+    else if(result.measureState == DATA_READY)
+        Serial.print("DATA_READY");
+
+
+    Serial.println();
 
     return result;
-
 }

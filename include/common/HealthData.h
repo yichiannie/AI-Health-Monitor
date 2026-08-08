@@ -2,15 +2,21 @@
 #define HEALTH_DATA_H
 
 
-enum SensorState
+enum SignalQuality
 {
-    SENSOR_INIT,
-    NO_FINGER,
-    SIGNAL_WEAK,
-    MEASURING,
-    DATA_READY,
-    SENSOR_ERROR
+    SIGNAL_NO_FINGER,
+    SIGNAL_MOVING,
+    SIGNAL_GOOD
 };
+
+
+enum MeasureState
+{
+    WAITING,
+    MEASURING,
+    DATA_READY
+};
+
 
 
 struct HealthData
@@ -18,7 +24,8 @@ struct HealthData
     float heartRate;
     float spo2;
 
-    SensorState state;
+    SignalQuality signalQuality;
+    MeasureState measureState;
 
     unsigned long timestamp;
 };
