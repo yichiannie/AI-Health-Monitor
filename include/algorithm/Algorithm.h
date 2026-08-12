@@ -5,7 +5,7 @@
 #include "common/HealthData.h"
 
 
-HealthData process(RawSensorData data);
+HealthData process(RawSensorData &data);
 
 
 #endif

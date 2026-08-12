@@ -49,13 +49,87 @@ bool initDisplay()
 
 void updateDisplay(const HealthData &data)
 {
-    Serial.println("------ HEALTH ------");
+    display.clearDisplay();
 
-    Serial.print("Heart Rate: ");
-    Serial.println(data.heartRate);
+    display.setTextColor(SSD1306_WHITE);
 
-    Serial.print("SpO2: ");
-    Serial.println(data.spo2);
 
-    Serial.println("--------------------");
+    // --------------------------------
+    // Title
+    // --------------------------------
+
+    display.setTextSize(1);
+    display.setCursor(0, 0);
+    display.println("AI HEALTH MONITOR");
+
+
+    // --------------------------------
+    // Heart Rate
+    // --------------------------------
+
+    display.setTextSize(1);
+    display.setCursor(0, 16);
+    display.println("HEART RATE");
+
+
+    display.setTextSize(2);
+    display.setCursor(0, 27);
+
+    if(data.heartRate > 0)
+    {
+        display.print(data.heartRate, 0);
+        display.println(" BPM");
+    }
+    else
+    {
+        display.println("-- BPM");
+    }
+
+
+    // --------------------------------
+    // Signal Quality
+    // --------------------------------
+
+    display.setTextSize(1);
+    display.setCursor(0, 48);
+
+    display.print("Signal: ");
+
+    if(data.signalQuality == SIGNAL_NO_FINGER)
+    {
+        display.println("NO FINGER");
+    }
+    else if(data.signalQuality == SIGNAL_MOVING)
+    {
+        display.println("MOVING");
+    }
+    else if(data.signalQuality == SIGNAL_GOOD)
+    {
+        display.println("GOOD");
+    }
+
+
+    // --------------------------------
+    // Measurement State
+    // --------------------------------
+
+    display.setCursor(0, 57);
+
+    display.print("Status: ");
+
+    if(data.measureState == WAITING)
+    {
+        display.println("WAITING");
+    }
+    else if(data.measureState == MEASURING)
+    {
+        display.println("MEASURING");
+    }
+    else if(data.measureState == DATA_READY)
+    {
+        display.println("READY");
+    }
+
+
+    display.display();
 }

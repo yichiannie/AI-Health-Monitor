@@ -8,6 +8,8 @@
 
 #define MOTION_COUNT_THRESHOLD 2
 
+#define REQUIRED_BEATS 3
+
 static uint32_t irBuffer[FILTER_SIZE];
 static int bufferIndex = 0;
 
@@ -22,6 +24,10 @@ static float currentHeartRate = 0;
 static uint32_t previousIR = 0;
 
 static int motionCount = 0;
+
+static int validBeatCount = 0;
+
+static bool measurementReady = false;
 
 
 #define BPM_BUFFER_SIZE 5
@@ -177,20 +183,24 @@ static bool detectMotion(uint32_t ir)
     return false;
 }
 
-HealthData process(RawSensorData data)
+HealthData process(RawSensorData &data)
 {
     HealthData result;
 
-    result.timestamp = data.timestamp;
+    result.timestamp = millis();
+
+
+    // --------------------------------
+    // 1. Finger detection
+    // --------------------------------
 
     bool fingerDetected = (data.ir > 10000);
 
-    // -------------------------
-    // 1. Signal Quality
-    // -------------------------
-
     if(!fingerDetected)
     {
+        validBeatCount = 0;
+        measurementReady = false;
+
         result.signalQuality = SIGNAL_NO_FINGER;
         result.measureState = WAITING;
 
@@ -201,13 +211,24 @@ HealthData process(RawSensorData data)
     }
 
 
+    // --------------------------------
+    // 2. Filter signal
+    // --------------------------------
+
     uint32_t filteredIR = filterIR(data.ir);
+
+
+    // --------------------------------
+    // 3. Motion detection
+    // --------------------------------
 
     bool moving = detectMotion(data.ir);
 
-
     if(moving)
     {
+        measurementReady = false;
+        validBeatCount = 0;
+
         result.signalQuality = SIGNAL_MOVING;
         result.measureState = MEASURING;
 
@@ -220,25 +241,38 @@ HealthData process(RawSensorData data)
     }
 
 
-    // -------------------------
-    // 2. Signal is good
-    // -------------------------
+    // --------------------------------
+    // 4. Good signal
+    // --------------------------------
 
     result.signalQuality = SIGNAL_GOOD;
 
 
-    // -------------------------
-    // 3. Measurement State
-    // -------------------------
+    // --------------------------------
+    // 5. Beat detection
+    // --------------------------------
 
     if(detectBeat(filteredIR, data.timestamp))
     {
-        Serial.print("Filtered IR:");
-        Serial.print(filteredIR);
+        validBeatCount++;
 
-        Serial.print(" BPM:");
-        Serial.println(currentHeartRate);
+        Serial.print("Valid beats: ");
+        Serial.println(validBeatCount);
 
+
+        if(validBeatCount >= REQUIRED_BEATS)
+        {
+            measurementReady = true;
+        }
+    }
+
+
+    // --------------------------------
+    // 6. Measurement state
+    // --------------------------------
+
+    if(measurementReady)
+    {
         result.measureState = DATA_READY;
     }
     else
@@ -250,27 +284,6 @@ HealthData process(RawSensorData data)
     result.heartRate = currentHeartRate;
     result.spo2 = 0;
 
-    Serial.print("Signal: ");
-
-    if(result.signalQuality == SIGNAL_NO_FINGER)
-        Serial.print("NO_FINGER");
-    else if(result.signalQuality == SIGNAL_MOVING)
-        Serial.print("MOVING");
-    else if(result.signalQuality == SIGNAL_GOOD)
-        Serial.print("GOOD");
-
-
-    Serial.print(" | Measure: ");
-
-    if(result.measureState == WAITING)
-        Serial.print("WAITING");
-    else if(result.measureState == MEASURING)
-        Serial.print("MEASURING");
-    else if(result.measureState == DATA_READY)
-        Serial.print("DATA_READY");
-
-
-    Serial.println();
 
     return result;
 }
