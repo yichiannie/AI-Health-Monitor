@@ -166,3 +166,17 @@ Built with:
 - HiveMQ Cloud
 - Node-RED
 - FreeRTOS
+
+## Demo
+
+### Hardware
+
+![Hardware Demo](./docs/hardware_demo.jpg)
+
+### OLED Display
+
+![OLED Display](./docs/oled_demo.jpg)
+
+### Node-RED Dashboard
+
+![Node-RED Dashboard](./docs/dashboard.png)
