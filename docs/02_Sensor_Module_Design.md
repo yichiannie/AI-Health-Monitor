@@ -1,11 +1,13 @@
-Sensor module abstracts MAX30102 hardware.
+# Sensor module abstracts MAX30102 hardware.
 
-Responsibilities:
+## Responsibilities:
+
 - Initialization
 - Data acquisition
 - HealthData update
 
-Non-responsibilities:
+## Non-responsibilities:
+
 - Display
 - Alarm
 - Communication

@@ -13,6 +13,7 @@ Single Writer Principle:
 ## Current Data
 
 - Heart Rate
-- SpO2
-- Sensor State
+- SpO₂
+- Signal Quality
+- Measure State
 - Timestamp
